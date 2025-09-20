@@ -3,6 +3,7 @@ package com.ronjie.gweather.di
 import com.ronjie.gweather.BuildConfig
 import com.ronjie.gweather.data.remote.WeatherApi
 import com.ronjie.gweather.data.remote.WeatherRemoteDataSource
+import com.ronjie.gweather.data.repository.WeatherLocalDataSource
 import com.ronjie.gweather.data.repository.WeatherRepositoryImpl
 import com.ronjie.gweather.data.util.Constants
 import com.ronjie.gweather.domain.repository.WeatherRepository
@@ -69,9 +70,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideWeatherRepository(
+        localDataSource: WeatherLocalDataSource,
         remoteDataSource: WeatherRemoteDataSource,
     ): WeatherRepository {
         return WeatherRepositoryImpl(
+            localDataSource = localDataSource,
             remoteDataSource = remoteDataSource,
             apiKey = BuildConfig.OPENWEATHER_API_KEY
         )

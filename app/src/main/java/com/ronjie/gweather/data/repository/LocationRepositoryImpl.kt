@@ -17,8 +17,20 @@ class LocationRepositoryImpl @Inject constructor(
     override suspend fun getLastSavedLocationOnce(): LastLocationEntity? =
         lastLocationDao.getLastLocationOnce()
 
+    private fun areValidCoordinates(latitude: Double, longitude: Double): Boolean {
+        return latitude in -90.0..90.0 &&
+                longitude in -180.0..180.0 &&
+                (latitude != 0.0 || longitude != 0.0)
+    }
+
     override suspend fun saveLastLocation(latitude: Double, longitude: Double) {
-        val location = LastLocationEntity(latitude = latitude, longitude = longitude)
+        if (!areValidCoordinates(latitude, longitude)) return
+
+        val location = LastLocationEntity(
+            id = 1,
+            latitude = latitude,
+            longitude = longitude
+        )
         lastLocationDao.insertOrUpdate(location)
     }
 }

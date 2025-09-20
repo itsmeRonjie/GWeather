@@ -106,6 +106,7 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.paging.common)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 

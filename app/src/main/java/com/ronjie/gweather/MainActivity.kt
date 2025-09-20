@@ -30,7 +30,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
-import com.ronjie.gweather.domain.model.Coordinates
 import com.ronjie.gweather.navigation.Screen
 import com.ronjie.gweather.presentation.MainViewModel
 import com.ronjie.gweather.presentation.component.GlobalSnackbar
@@ -76,8 +75,6 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val messageManager = rememberMessageManager()
-                val mainViewModel: MainViewModel = hiltViewModel()
-                val currentLocation by mainViewModel.currentLocation.collectAsStateWithLifecycle()
                 val scope = rememberCoroutineScope()
 
                 CompositionLocalProvider(
@@ -86,7 +83,6 @@ class MainActivity : ComponentActivity() {
                     MainScreen(
                         navController = navController,
                         startDestination = startDestination,
-                        currentLocation = currentLocation,
                         locationProvider = locationProvider,
                         onSignOut = {
                             scope.launch {
@@ -109,7 +105,6 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(
     navController: NavHostController,
     startDestination: String,
-    currentLocation: Coordinates,
     locationProvider: LocationProvider,
     onSignOut: () -> Unit,
     messageManager: MessageManager
@@ -197,15 +192,20 @@ fun MainScreen(
                 val weatherViewModel = hiltViewModel<WeatherViewModel>()
 
                 LaunchedEffect(currentLocationState) {
-                    weatherViewModel.loadWeather(
-                        currentLocationState.latitude,
-                        currentLocationState.longitude
-                    )
+                    if (currentLocationState.latitude != 0.0 || currentLocationState.longitude != 0.0) {
+                        weatherViewModel.loadWeather(
+                            currentLocationState.latitude,
+                            currentLocationState.longitude
+                        )
+                    }
                 }
 
                 LaunchedEffect(Unit) {
                     locationProvider.locationUpdates.collect { location ->
-                        mainViewModel.updateLocation(location)
+                        if (location.latitude != 0.0 || location.longitude != 0.0) {
+                            mainViewModel.updateLocation(location)
+                            weatherViewModel.loadWeather(location.latitude, location.longitude)
+                        }
                     }
                 }
 
@@ -225,7 +225,7 @@ fun MainScreen(
                 HistoryScreen()
             }
         }
-        
+
         val currentMessage by messageManager.currentMessage.collectAsState()
         currentMessage?.let { message ->
             GlobalSnackbar(

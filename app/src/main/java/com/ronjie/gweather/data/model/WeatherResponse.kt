@@ -61,9 +61,9 @@ data class Main(
     @SerializedName("humidity")
     val humidity: Int?,
     @SerializedName("sea_level")
-    val seaLevel: Int?,
+    val seaLevel: Int? = null,
     @SerializedName("grnd_level")
-    val groundLevel: Int?
+    val groundLevel: Int? = null
 )
 
 data class Wind(
@@ -72,7 +72,7 @@ data class Wind(
     @SerializedName("deg")
     val degrees: Int,
     @SerializedName("gust")
-    val gust: Double?
+    val gust: Double? = null
 )
 
 data class Clouds(

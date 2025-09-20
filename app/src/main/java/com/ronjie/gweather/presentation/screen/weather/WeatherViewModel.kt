@@ -2,7 +2,9 @@ package com.ronjie.gweather.presentation.screen.weather
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ronjie.gweather.domain.model.Weather
 import com.ronjie.gweather.domain.repository.LocationRepository
+import com.ronjie.gweather.domain.repository.WeatherRepository
 import com.ronjie.gweather.domain.usecase.GetCurrentWeatherUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -10,12 +12,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
     private val getCurrentWeather: GetCurrentWeatherUseCase,
+    private val weatherRepository: WeatherRepository,
     private val locationRepository: LocationRepository
 ) : ViewModel() {
 
@@ -25,8 +30,25 @@ class WeatherViewModel @Inject constructor(
     private val _errorFlow = MutableSharedFlow<String>()
     val errorFlow = _errorFlow.asSharedFlow()
 
+    private var currentWeather: Weather? = null
+        set(value) {
+            field = value
+            value?.let { _uiState.value = WeatherUiState.Success(it) }
+        }
+
     init {
         loadInitialWeather()
+        observeCachedWeather()
+    }
+
+    private fun observeCachedWeather() {
+        viewModelScope.launch {
+            weatherRepository.getCachedWeather().collectLatest { cachedWeather ->
+                cachedWeather?.let {
+                    currentWeather = it
+                }
+            }
+        }
     }
 
     private fun loadInitialWeather() {
@@ -34,6 +56,10 @@ class WeatherViewModel @Inject constructor(
             _uiState.value = WeatherUiState.Loading
             val lastLocation = locationRepository.getLastSavedLocationOnce()
             if (lastLocation != null) {
+                val cachedWeather = weatherRepository.getCachedWeather().firstOrNull()
+                if (cachedWeather != null) {
+                    currentWeather = cachedWeather
+                }
                 loadWeather(
                     lastLocation.latitude,
                     lastLocation.longitude,
@@ -50,24 +76,44 @@ class WeatherViewModel @Inject constructor(
     fun loadWeather(
         latitude: Double,
         longitude: Double,
-        saveCoordinates: Boolean = true
+        saveCoordinates: Boolean = true,
+        forceRefresh: Boolean = false
     ) {
         viewModelScope.launch {
-            _uiState.value = WeatherUiState.Loading
+            try {
+                if (saveCoordinates) {
+                    locationRepository.saveLastLocation(latitude, longitude)
+                }
 
-            if (saveCoordinates) {
-                locationRepository.saveLastLocation(latitude, longitude)
+                if (currentWeather == null || forceRefresh) {
+                    _uiState.value = WeatherUiState.Loading
+                }
+
+                getCurrentWeather(latitude, longitude)
+                    .onSuccess { weather ->
+                        currentWeather = weather
+                        weatherRepository.saveWeather(
+                            weather = weather,
+                            locationName = weather.location,
+                            lat = latitude,
+                            lon = longitude
+                        )
+                    }
+                    .onFailure { exception ->
+                        if (currentWeather == null) {
+                            val errorMessage = exception.message ?: "Unknown error occurred"
+                            _uiState.value = WeatherUiState.Error(errorMessage)
+                            _errorFlow.tryEmit("Failed to update weather: $errorMessage")
+                        } else {
+                            _errorFlow.tryEmit("Using cached data: ${exception.message}")
+                        }
+                    }
+            } catch (e: Exception) {
+                if (currentWeather == null) {
+                    _uiState.value = WeatherUiState.Error("Failed to load weather")
+                    _errorFlow.tryEmit("Failed to load weather: ${e.message}")
+                }
             }
-
-            getCurrentWeather(latitude, longitude)
-                .onSuccess { weather ->
-                    _uiState.value = WeatherUiState.Success(weather)
-                }
-                .onFailure { exception ->
-                    val errorMessage = exception.message ?: "Unknown error occurred"
-                    _uiState.value = WeatherUiState.Error(errorMessage)
-                    _errorFlow.tryEmit(errorMessage)
-                }
         }
     }
 }
