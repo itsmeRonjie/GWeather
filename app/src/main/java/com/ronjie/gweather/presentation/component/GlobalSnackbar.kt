@@ -20,18 +20,21 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlobalSnackbar(
-    messageManager: MessageManager,
+    message: String,
+    isError: Boolean,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    onDismiss: (message: Message) -> Unit = { messageManager.removeMessage(it) },
 ) {
-    val currentMessage = messageManager.messages.firstOrNull()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(currentMessage) {
-        currentMessage?.let { message ->
-            snackbarHostState.showSnackbar(message.message)
-            delay(3000) // Auto-dismiss after 3 seconds
-            onDismiss(message)
+    LaunchedEffect(message) {
+        if (message.isNotBlank()) {
+            snackbarHostState.showSnackbar(
+                message = message,
+                withDismissAction = true
+            )
+            delay(3000)
+            onDismiss()
         }
     }
 
@@ -41,24 +44,14 @@ fun GlobalSnackbar(
     ) {
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier.padding(16.dp),
-            snackbar = { data ->
-                Snackbar(
-                    containerColor = if (currentMessage?.isError == true) {
-                        MaterialTheme.colorScheme.errorContainer
-                    } else {
-                        MaterialTheme.colorScheme.inverseSurface
-                    },
-                    contentColor = if (currentMessage?.isError == true) {
-                        MaterialTheme.colorScheme.onErrorContainer
-                    } else {
-                        MaterialTheme.colorScheme.inverseOnSurface
-                    },
-                    content = {
-                        Text(text = data.visuals.message)
-                    }
-                )
-            }
-        )
+            modifier = Modifier.padding(16.dp)
+        ) { data ->
+            Snackbar(
+                containerColor = if (isError) MaterialTheme.colorScheme.errorContainer
+                else MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (isError) MaterialTheme.colorScheme.onErrorContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            ) { Text(text = data.visuals.message) }
+        }
     }
 }

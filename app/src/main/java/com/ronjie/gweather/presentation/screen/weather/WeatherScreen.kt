@@ -18,6 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -35,13 +38,19 @@ fun WeatherScreen(
     viewModel: WeatherViewModel = hiltViewModel(),
     latitude: Double,
     longitude: Double,
-    onSignOut: () -> Unit = {},
     onError: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var currentWeather by remember { mutableStateOf<Weather?>(null) }
 
-    LaunchedEffect(key1 = latitude, key2 = longitude) {
+    LaunchedEffect(latitude, longitude) {
         viewModel.loadWeather(latitude, longitude)
+    }
+
+    LaunchedEffect(uiState) {
+        if (uiState is WeatherUiState.Success) {
+            currentWeather = (uiState as WeatherUiState.Success).weather
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -54,8 +63,14 @@ fun WeatherScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        when (val state = uiState) {
-            is WeatherUiState.Loading -> {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            currentWeather?.let { weather ->
+                WeatherContent(weather = weather)
+            }
+
+            if (uiState is WeatherUiState.Loading && currentWeather == null) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -64,20 +79,27 @@ fun WeatherScreen(
                 }
             }
 
-            is WeatherUiState.Error -> {
-                // Error is now handled by the global snackbar
+            if (uiState is WeatherUiState.Loading && currentWeather != null) {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    Text("Failed to load weather data")
+                    CircularProgressIndicator()
                 }
             }
 
-            is WeatherUiState.Success -> {
-                WeatherContent(weather = state.weather)
+            if (uiState is WeatherUiState.Error && currentWeather == null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = (uiState as WeatherUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }

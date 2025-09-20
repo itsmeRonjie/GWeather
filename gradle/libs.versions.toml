@@ -32,6 +32,9 @@ navigationCompose = "2.9.4"
 # DataStore
 datastore = "1.1.7"
 
+# Room
+room = "2.8.0"
+
 # Testing
 mockk = "1.14.5"
 coroutinesTest = "1.10.2"
@@ -42,6 +45,11 @@ navigationRuntimeKtx = "2.9.4"
 # Core Android
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+
+# Room
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 # Compose
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }

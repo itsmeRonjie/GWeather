@@ -31,7 +31,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 @Composable
 fun AuthScreen(
     onAuthSuccess: () -> Unit,
-    viewModel: AuthViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel(),
+    onError: (String) -> Unit,
 ) {
     var isLogin by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
@@ -129,10 +130,7 @@ fun AuthScreen(
         TextButton(
             onClick = {
                 isLogin = !isLogin
-                // Clear confirm password when switching modes
-                if (isLogin) {
-                    confirmPassword = ""
-                }
+                if (isLogin) confirmPassword = ""
             }
         ) {
             Text(
