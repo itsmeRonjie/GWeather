@@ -1,4 +1,4 @@
-package com.ronjie.gweather.presentation.ui.common
+package com.ronjie.gweather.presentation.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column

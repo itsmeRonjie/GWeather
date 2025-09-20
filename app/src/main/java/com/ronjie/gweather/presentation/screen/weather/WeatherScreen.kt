@@ -1,4 +1,4 @@
-package com.ronjie.gweather.presentation.ui.weather
+package com.ronjie.gweather.presentation.screen.weather
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,11 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ronjie.gweather.domain.model.Weather
-import com.ronjie.gweather.presentation.ui.common.WeatherDetailCard
-import com.ronjie.gweather.presentation.ui.weather.WeatherUiState.Error
-import com.ronjie.gweather.presentation.ui.weather.WeatherUiState.Loading
-import com.ronjie.gweather.presentation.ui.weather.WeatherUiState.Success
+import com.ronjie.gweather.presentation.common.WeatherDetailCard
 import com.ronjie.gweather.utils.getWindDirection
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun WeatherScreen(
@@ -37,6 +35,8 @@ fun WeatherScreen(
     viewModel: WeatherViewModel = hiltViewModel(),
     latitude: Double,
     longitude: Double,
+    onSignOut: () -> Unit = {},
+    onError: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -44,12 +44,18 @@ fun WeatherScreen(
         viewModel.loadWeather(latitude, longitude)
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.errorFlow.collectLatest { error ->
+            onError(error)
+        }
+    }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
         when (val state = uiState) {
-            is Loading -> {
+            is WeatherUiState.Loading -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -58,21 +64,19 @@ fun WeatherScreen(
                 }
             }
 
-            is Error -> {
+            is WeatherUiState.Error -> {
+                // Error is now handled by the global snackbar
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Error: ${state.message}",
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Text("Failed to load weather data")
                 }
             }
 
-            is Success -> {
+            is WeatherUiState.Success -> {
                 WeatherContent(weather = state.weather)
             }
         }

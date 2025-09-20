@@ -1,4 +1,4 @@
-package com.ronjie.gweather.presentation.ui.weather
+package com.ronjie.gweather.presentation.screen.weather
 
 import com.ronjie.gweather.domain.model.Weather
 
