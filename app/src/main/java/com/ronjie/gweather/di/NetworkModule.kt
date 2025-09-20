@@ -4,6 +4,7 @@ import com.ronjie.gweather.BuildConfig
 import com.ronjie.gweather.data.remote.WeatherApi
 import com.ronjie.gweather.data.remote.WeatherRemoteDataSource
 import com.ronjie.gweather.data.repository.WeatherRepositoryImpl
+import com.ronjie.gweather.data.util.Constants
 import com.ronjie.gweather.domain.repository.WeatherRepository
 import com.ronjie.gweather.domain.usecase.GetCurrentWeatherUseCase
 import dagger.Module
@@ -20,7 +21,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    private const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
+    private const val BASE_URL = "${Constants.API_BASE_URL}/data/2.5/"
 
     @Provides
     @Singleton
@@ -59,7 +60,9 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideWeatherRemoteDataSource(weatherApi: WeatherApi): WeatherRemoteDataSource {
+    fun provideWeatherRemoteDataSource(
+        weatherApi: WeatherApi
+    ): WeatherRemoteDataSource {
         return WeatherRemoteDataSource(weatherApi)
     }
 
@@ -68,12 +71,17 @@ object NetworkModule {
     fun provideWeatherRepository(
         remoteDataSource: WeatherRemoteDataSource,
     ): WeatherRepository {
-        return WeatherRepositoryImpl(remoteDataSource, BuildConfig.OPENWEATHER_API_KEY)
+        return WeatherRepositoryImpl(
+            remoteDataSource = remoteDataSource,
+            apiKey = BuildConfig.OPENWEATHER_API_KEY
+        )
     }
 
     @Provides
     @Singleton
-    fun provideGetCurrentWeatherUseCase(repository: WeatherRepository): GetCurrentWeatherUseCase {
+    fun provideGetCurrentWeatherUseCase(
+        repository: WeatherRepository
+    ): GetCurrentWeatherUseCase {
         return GetCurrentWeatherUseCase(repository)
     }
 }

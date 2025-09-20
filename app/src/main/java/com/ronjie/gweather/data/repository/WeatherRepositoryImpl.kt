@@ -17,7 +17,11 @@ class WeatherRepositoryImpl @Inject constructor(
 
     private var cachedWeather: Weather? = null
 
-    override suspend fun getCurrentWeather(latitude: Double, longitude: Double): Result<Weather> {
+    override suspend fun getCurrentWeather(
+        latitude: Double,
+        longitude: Double
+    ): Result<Weather> {
+
         return try {
             val response = remoteDataSource.getCurrentWeather(latitude, longitude, apiKey)
             val weather = response.toDomain()

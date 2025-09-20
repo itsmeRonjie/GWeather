@@ -10,12 +10,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.ronjie.gweather.domain.model.MyLatLong
+import com.ronjie.gweather.domain.model.Coordinates
 
 @Composable
 fun LocationScreen(
     modifier: Modifier = Modifier,
-    currentLocation: MyLatLong,
+    currentLocation: Coordinates,
     hasPermission: Boolean,
     onRequestPermission: () -> Unit
 ) {
@@ -26,7 +26,7 @@ fun LocationScreen(
     ) {
         if (hasPermission) {
             Text(
-                text = "Current location: ${currentLocation.lat}, ${currentLocation.long}"
+                text = "Current location: ${currentLocation.latitude}, ${currentLocation.longitude}"
             )
         } else {
             Text(

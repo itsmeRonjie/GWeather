@@ -15,7 +15,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.ronjie.gweather.domain.model.MyLatLong
+import com.ronjie.gweather.domain.model.Coordinates
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -26,11 +26,16 @@ class LocationProvider(private val activity: ComponentActivity) {
 
     private lateinit var locationCallback: LocationCallback
 
-    val locationUpdates: Flow<MyLatLong> = callbackFlow {
+    val locationUpdates: Flow<Coordinates> = callbackFlow {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
-                    trySend(MyLatLong(lat = location.latitude, long = location.longitude))
+                    trySend(
+                        Coordinates(
+                            latitude = location.latitude,
+                            longitude = location.longitude
+                        )
+                    )
                 }
             }
         }

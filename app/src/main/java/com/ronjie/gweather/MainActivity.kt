@@ -12,7 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.ronjie.gweather.domain.model.MyLatLong
+import com.ronjie.gweather.domain.model.Coordinates
 import com.ronjie.gweather.presentation.theme.GWeatherTheme
 import com.ronjie.gweather.presentation.ui.weather.WeatherScreen
 import com.ronjie.gweather.utils.LocationProvider
@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val currentLocation by locationProvider.locationUpdates.collectAsState(
-                initial = MyLatLong(0.0, 0.0) // Provide a sensible default
+                initial = Coordinates(14.5995, 120.9842)
             )
 
             LaunchedEffect(Unit) {
@@ -44,8 +44,8 @@ class MainActivity : ComponentActivity() {
                     WeatherScreen(
                         modifier = Modifier.padding(innerPadding),
                         viewModel = hiltViewModel(),
-                        latitude = currentLocation.lat,
-                        longitude = currentLocation.long
+                        latitude = currentLocation.latitude,
+                        longitude = currentLocation.longitude
                     )
                 }
             }
