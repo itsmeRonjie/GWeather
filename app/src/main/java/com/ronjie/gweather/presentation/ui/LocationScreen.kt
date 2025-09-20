@@ -1,4 +1,4 @@
-package com.ronjie.gweather.ui
+package com.ronjie.gweather.presentation.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

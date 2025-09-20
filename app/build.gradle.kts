@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -19,10 +22,18 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "com.ronjie.gweather.HiltTestRunner"
-        
+
         multiDexEnabled = true
-        
-        buildConfigField("String", "OPENWEATHER_API_KEY", "\"${properties["OPENWEATHER_API_KEY"] ?: ""}\"")
+
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+
+        val apiKey = localProperties.getProperty("OPENWEATHER_API_KEY")
+        buildConfigField("String", "OPENWEATHER_API_KEY", "\"$apiKey\"")
+
     }
 
     buildTypes {
@@ -39,17 +50,17 @@ android {
             applicationIdSuffix = ".debug"
         }
     }
-    
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
-    
+
     @Suppress("UnstableApiUsage")
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
-    
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -59,7 +70,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    
+
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -75,7 +86,7 @@ dependencies {
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    
+
     // Compose
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -84,12 +95,12 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.navigation.compose)
-    
+
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
-    
+
     // Network
     implementation(libs.retrofit)
     implementation(libs.retrofit.okhttp)
@@ -99,13 +110,13 @@ dependencies {
 
     // Location
     implementation(libs.play.services.location)
-    
+
     // Image Loading
     implementation(libs.coil.compose)
-    
+
     // DataStore
     implementation(libs.datastore.preferences)
-    
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk.android)

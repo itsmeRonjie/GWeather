@@ -11,11 +11,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.ronjie.gweather.domain.model.MyLatLong
 import com.ronjie.gweather.presentation.theme.GWeatherTheme
-import com.ronjie.gweather.ui.LocationScreen
+import com.ronjie.gweather.presentation.ui.weather.WeatherScreen
 import com.ronjie.gweather.utils.LocationProvider
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private lateinit var locationProvider: LocationProvider
 
@@ -38,13 +41,11 @@ class MainActivity : ComponentActivity() {
 
             GWeatherTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LocationScreen(
+                    WeatherScreen(
                         modifier = Modifier.padding(innerPadding),
-                        currentLocation = currentLocation,
-                        hasPermission = locationProvider.hasLocationPermission(),
-                        onRequestPermission = {
-                            locationProvider.requestLocationPermissions()
-                        }
+                        viewModel = hiltViewModel(),
+                        latitude = currentLocation.lat,
+                        longitude = currentLocation.long
                     )
                 }
             }
