@@ -33,11 +33,11 @@ data class Weather(
         get() = formatTimestamp(timestamp)
 
     fun getSunriseTime(): String {
-        return formatTime(sunrise, timezone)
+        return formatTime(sunrise)
     }
 
     fun getSunsetTime(): String {
-        return formatTime(sunset, timezone)
+        return formatTime(sunset)
     }
 
     fun getWeatherIconUrl(): String {
@@ -55,8 +55,8 @@ data class Weather(
         return currentTime < sunrise || currentTime > sunset
     }
 
-    private fun formatTime(timestamp: Long, timezone: Int): String {
-        val date = Date((timestamp + timezone) * 1000L)
+    private fun formatTime(timestamp: Long): String {
+        val date = Date(timestamp * 1000L)
         return SimpleDateFormat("h:mm a", Locale.getDefault()).format(date)
     }
 

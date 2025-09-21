@@ -34,6 +34,9 @@ class WeatherRepositoryImpl @Inject constructor(
         saveToDatabase: Boolean
     ): Result<Weather> {
         return try {
+            if (!areValidCoordinates(latitude, longitude)) {
+                return Result.failure(Exception(""))
+            }
             val response = remoteDataSource.getCurrentWeather(latitude, longitude, apiKey)
             val localWeather = localDataSource.getWeatherHistory()
                 .firstOrNull()
