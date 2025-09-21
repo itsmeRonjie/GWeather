@@ -56,10 +56,15 @@ class MainViewModel @Inject constructor(
     fun updateLocation(coordinates: Coordinates) {
         _currentLocation.value = coordinates
         viewModelScope.launch {
-            locationRepository.saveLastLocation(
-                latitude = coordinates.latitude,
-                longitude = coordinates.longitude
-            )
+            try {
+                locationRepository.saveLastLocation(
+                    latitude = coordinates.latitude,
+                    longitude = coordinates.longitude
+                )
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error saving location to database", e)
+            }
         }
     }
 }
+
