@@ -46,78 +46,73 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    # Disable Firebase and Crashlytics for CI builds
-    - name: Configure build for CI
+    # Configure build environment
+    - name: Configure build environment
       run: |
-        # Create a dummy google-services.json for all build types
-        mkdir -p app/src/debug app/src/release
+        # Create gradle.properties with necessary configurations
+        echo "org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8" > gradle.properties
+        echo "android.useAndroidX=true" >> gradle.properties
+        echo "android.enableJetifier=true" >> gradle.properties
+        echo "android.nonTransitiveRClass=true" >> gradle.properties
+        echo "kotlin.code.style=official" >> gradle.properties
         
-        # Create a minimal valid google-services.json
+        # Disable Firebase for CI
+        echo "firebaseCrashlytics.mappingFileUpdateEnabled=false" >> gradle.properties
+        echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
+        
+        # Create local.properties with Android SDK location
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
+        
+        # Create a basic google-services.json to prevent build failures
+        mkdir -p app/src/debug app/src/release
         cat > app/google-services.json << 'EOL'
         {
           "project_info": {
             "project_number": "000000000000",
-            "project_id": "dummy-firebase-project",
-            "storage_bucket": "dummy-firebase-project.appspot.com"
+            "project_id": "dummy-project",
+            "storage_bucket": "dummy-project.appspot.com"
           },
-          "client": [
-            {
-              "client_info": {
-                "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
-                "android_client_info": {
-                  "package_name": "com.ronjie.gweather"
-                }
-              },
-              "api_key": [
-                {
-                  "current_key": "dummy-api-key"
-                }
-              ],
-              "services": {
-                "appinvite_service": {
-                  "status": 1,
-                  "other_platform_oauth_client": []
-                }
+          "client": [{
+            "client_info": {
+              "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+              "android_client_info": {
+                "package_name": "com.ronjie.gweather"
               }
-            }
-          ],
-          "configuration_version": "1"
+            },
+            "api_key": [{
+              "current_key": "dummy-key"
+            }]
+          }]
         }
         EOL
-        
-        # Disable Firebase and Crashlytics
-        echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
-        echo "firebaseCrashlytics.mappingFileUpdateEnabled=false" >> gradle.properties
-        echo "org.gradle.parallel=true" >> gradle.properties
-        
-        # Create a local.properties with Firebase disabled
-        echo "android.enableFirebase=false" > local.properties
 
-    - name: Build with Gradle
+    # Build and test
+    - name: Build project
       run: |
-        # Build without Firebase and Crashlytics
-        ./gradlew clean assembleDebug --stacktrace --info -Pci \
-          -Pandroid.enableFirebase=false \
-          -PfirebaseCrashlytics.mappingFileUpdateEnabled=false
+        ./gradlew clean assembleDebug --stacktrace --info --no-daemon --no-parallel
 
-    - name: Run tests
+    - name: Run unit tests
       run: |
-        ./gradlew testDebugUnitTest --stacktrace --info -Pci \
-          -Pandroid.enableFirebase=false \
-          -PfirebaseCrashlytics.mappingFileUpdateEnabled=false
+        ./gradlew testDebugUnitTest --stacktrace --info --no-daemon --no-parallel
 
-    - name: Lint check
-      run: |
-        ./gradlew lintDebug --stacktrace --info -Pci \
-          -Pandroid.enableFirebase=false \
-          -PfirebaseCrashlytics.mappingFileUpdateEnabled=false
-
-    - name: Assemble debug APK
+    - name: Run instrumentation tests
       if: github.event_name != 'pull_request'
       run: |
-        ./gradlew assembleDebug --stacktrace --info -Pci \
-          -Pandroid.enableFirebase=false \
-          -PfirebaseCrashlytics.mappingFileUpdateEnabled=false
+        ./gradlew connectedDebugAndroidTest --stacktrace --info --no-daemon --no-parallel
+
+    - name: Run lint checks
+      run: |
+        ./gradlew lintDebug --stacktrace --info --no-daemon --no-parallel
+
+    - name: Assemble release APK
+      if: github.event_name != 'pull_request'
+      run: |
+        ./gradlew assembleRelease --stacktrace --info --no-daemon --no-parallel
+        
+    - name: Bundle release
+      if: github.event_name != 'pull_request'
+      run: |
+        ./gradlew bundleRelease --stacktrace --info --no-daemon --no-parallel
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
