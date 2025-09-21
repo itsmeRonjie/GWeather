@@ -1,4 +1,4 @@
-name: Fast CI - Test & Build
+name: Android CI
 
 on:
   push:
@@ -12,9 +12,11 @@ env:
   GRADLE_CACHE_DIR: ~/.gradle/caches
 
 jobs:
-  build:
-    name: Build and Test
+  setup:
+    name: Setup Environment
     runs-on: ubuntu-latest
+    outputs:
+      gradle-properties: ${{ steps.setup.outputs.gradle-properties }}
 
     steps:
       - name: Checkout code
@@ -41,25 +43,27 @@ jobs:
           touch ~/.android/repositories.cfg
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      # Minimal setup for unit tests
       - name: Setup environment
+        id: setup
         run: |
-          # Basic Gradle properties
+          # Create and output Gradle properties
           mkdir -p ~/.gradle
           cat > ~/.gradle/gradle.properties << 'EOL'
           org.gradle.caching=true
           org.gradle.parallel=true
           org.gradle.daemon=false
-          # Disable Firebase and Crashlytics in CI
           android.defaults.buildfeatures.buildconfig=true
           firebaseCrashlytics.mappingFileUpdateEnabled=false
-          android.enableFirebase=false
+          # Disable Firebase for CI builds
+          firebase.analytics.deactivated=true
+          firebase.crashlytics.mappingFileUpdateEnabled=false
+          android.injected.testOnly=false
           EOL
           
-          # Local properties
+          # Create local.properties
           echo 'sdk.dir=$ANDROID_HOME' > local.properties
           
-          # Create a valid google-services.json with required fields
+          # Create minimal google-services.json
           mkdir -p app
           cat > app/google-services.json << 'EOL'
           {
@@ -86,16 +90,84 @@ jobs:
           }
           EOL
           
-          # Grant execute permission
+          chmod +x gradlew
+          
+          # Output Gradle properties for other jobs
+          echo "gradle-properties=$(cat ~/.gradle/gradle.properties | base64 -w0)" >> $GITHUB_OUTPUT
+          
+          # Save the generated files as artifacts
+          mkdir -p ci-files/app
+          cp -r ~/.gradle ci-files/
+          cp local.properties ci-files/
+          cp -r app/google-services.json ci-files/app/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-files
+          path: ci-files/
+          retention-days: 1
+
+  test:
+    name: Run Tests
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-files
+          path: .
+
+      - name: Restore environment
+        run: |
+          # Restore Gradle properties and local.properties
+          mkdir -p ~/.gradle
+          cp -r ci-files/.gradle/* ~/.gradle/
+          cp ci-files/local.properties .
+          
+          # Restore app files
+          mkdir -p app
+          cp ci-files/app/google-services.json app/
+          
+          # Make gradlew executable
           chmod +x gradlew
 
-      # Run unit tests with Firebase disabled
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
       - name: Run unit tests
         run: |
           ./gradlew testDebugUnitTest --stacktrace --no-daemon -Pandroid.enableFirebase=false
 
-      # Only build debug APK on main branch (skipped in PRs)
+  build:
+    name: Build APK
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore Gradle properties
+        run: |
+          mkdir -p ~/.gradle
+          echo "${{ needs.setup.outputs.gradle-properties }}" | base64 -d > ~/.gradle/gradle.properties
+
       - name: Build debug APK
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           ./gradlew assembleDebug --stacktrace --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 1
