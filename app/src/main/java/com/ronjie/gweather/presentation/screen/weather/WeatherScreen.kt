@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -28,8 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ronjie.gweather.domain.model.Weather
-import com.ronjie.gweather.presentation.common.WeatherDetailCard
-import com.ronjie.gweather.utils.getWindDirection
+import com.ronjie.gweather.presentation.common.WeatherDetails
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -111,7 +109,6 @@ fun WeatherContent(weather: Weather) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -140,44 +137,11 @@ fun WeatherContent(weather: Weather) {
             modifier = Modifier.size(120.dp)
         )
 
-        Card(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                WeatherDetailCard(
-                    title = "Sunrise",
-                    value = weather.getSunriseTime()
-                )
-                WeatherDetailCard(
-                    title = "Wind",
-                    value = "${weather.windSpeed} m/s",
-                    additionalInfo = getWindDirection(weather.windDegrees)
-                )
-                WeatherDetailCard(
-                    title = "Humidity",
-                    value = "${weather.humidity}%"
-                )
-                WeatherDetailCard(
-                    title = "Feels like",
-                    value = "${weather.feelsLike.toInt()}°C"
-                )
-                WeatherDetailCard(
-                    title = "Sunset",
-                    value = weather.getSunsetTime()
-                )
-                WeatherDetailCard(
-                    title = "Pressure",
-                    value = "${weather.pressure} hPa"
-                )
-                WeatherDetailCard(
-                    title = "Visibility",
-                    value = "${weather.visibility / 1000} km"
-                )
-            }
+            WeatherDetails(weather)
         }
     }
 }

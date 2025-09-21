@@ -35,6 +35,10 @@ class WeatherRepositoryImpl @Inject constructor(
     ): Result<Weather> {
         return try {
             val response = remoteDataSource.getCurrentWeather(latitude, longitude, apiKey)
+            val localWeather = localDataSource.getWeatherHistory()
+                .firstOrNull()
+                ?.firstOrNull()
+                ?.toDomain()
 
             val weather = if (
                 response.coordinatesDTO?.latitude == 0.0 &&
@@ -46,14 +50,16 @@ class WeatherRepositoryImpl @Inject constructor(
                         longitude = longitude
                     )
                 ).toDomain()
-            } else response.toDomain()
+            } else {
+                localWeather ?: return Result.failure(Exception("Invalid coordinates"))
+            }
 
             if (areValidCoordinates(
                     latitude = weather.coordinates.latitude,
                     longitude = weather.coordinates.longitude
                 )
             ) cachedWeather = weather
-            
+
             if (saveToDatabase) {
                 saveWeather(
                     weather = weather,

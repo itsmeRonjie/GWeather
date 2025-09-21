@@ -28,17 +28,6 @@ data class Weather(
     val countryCode: String,
     val timestamp: Long
 ) {
-    val temperatureCelsius: Double
-        get() = temperature - 273.15
-
-    val temperatureFeelsLikeCelsius: Double
-        get() = feelsLike - 273.15
-
-    val minTemperatureCelsius: Double
-        get() = tempMin - 273.15
-
-    val maxTemperatureCelsius: Double
-        get() = tempMax - 273.15
 
     val formattedTimestamp: String
         get() = formatTimestamp(timestamp)
@@ -74,7 +63,7 @@ data class Weather(
 
     private fun formatTimestamp(timestamp: Long): String {
         return SimpleDateFormat(
-            "MMM d, yyyy h:mm a",
+            "MMM d, yyyy — h:mm a",
             Locale.getDefault()
         ).format(timestamp)
     }

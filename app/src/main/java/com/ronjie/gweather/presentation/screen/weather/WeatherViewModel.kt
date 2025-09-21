@@ -65,7 +65,6 @@ class WeatherViewModel @Inject constructor(
                     longitude = lastLocation.longitude,
                     saveCoordinates = false,
                     saveToDatabase = true
-
                 )
             } else {
                 _uiState.value =
@@ -95,6 +94,7 @@ class WeatherViewModel @Inject constructor(
                 getCurrentWeather(latitude, longitude, saveToDatabase)
                     .onSuccess { weather ->
                         currentWeather = weather
+                        println("Weather loaded: $weather")
                     }
                     .onFailure { exception ->
                         if (currentWeather == null) {
