@@ -130,7 +130,10 @@ fun WeatherContent(weather: Weather) {
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-
+//
+//        Image(
+//            painter = painterResource(id = R.drawable.sun),),
+//        )
         AsyncImage(
             model = weather.getWeatherIconUrl(),
             contentDescription = weather.weatherDescription,

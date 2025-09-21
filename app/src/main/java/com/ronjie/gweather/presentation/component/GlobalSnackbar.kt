@@ -40,7 +40,7 @@ fun GlobalSnackbar(
 
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter
+        contentAlignment = Alignment.TopCenter
     ) {
         SnackbarHost(
             hostState = snackbarHostState,

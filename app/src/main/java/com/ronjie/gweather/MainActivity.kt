@@ -125,12 +125,12 @@ fun MainScreen(
                             icon = {
                                 when (screen) {
                                     is Screen.Weather -> Icon(
-                                        Icons.Default.Home,
+                                        imageVector = Icons.Default.Home,
                                         contentDescription = "Weather"
                                     )
 
                                     is Screen.History -> Icon(
-                                        Icons.Default.History,
+                                        imageVector = Icons.Default.History,
                                         contentDescription = "History"
                                     )
 
@@ -179,11 +179,6 @@ fun MainScreen(
                         navController.navigate(Screen.WEATHER_ROUTE) {
                             popUpTo(Screen.AUTH_ROUTE) { inclusive = true }
                         }
-                    },
-                    onError = { error ->
-                        scope.launch {
-                            messageManager.showMessage(error, isError = true)
-                        }
                     }
                 )
             }
@@ -194,8 +189,8 @@ fun MainScreen(
                 LaunchedEffect(currentLocationState) {
                     if (currentLocationState.latitude != 0.0 || currentLocationState.longitude != 0.0) {
                         weatherViewModel.loadWeather(
-                            currentLocationState.latitude,
-                            currentLocationState.longitude,
+                            latitude = currentLocationState.latitude,
+                            longitude = currentLocationState.longitude,
                         )
                     }
                 }

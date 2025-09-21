@@ -3,7 +3,6 @@ package com.ronjie.gweather.presentation.screen.history
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ronjie.gweather.data.mapper.toDomain
-import com.ronjie.gweather.domain.model.Weather
 import com.ronjie.gweather.domain.repository.WeatherRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,11 +38,4 @@ class HistoryViewModel @Inject constructor(
             }
         }
     }
-}
-
-sealed interface HistoryUiState {
-    data object Loading : HistoryUiState
-    data object Empty : HistoryUiState
-    data class Error(val message: String) : HistoryUiState
-    data class Success(val weatherList: List<Weather>) : HistoryUiState
 }

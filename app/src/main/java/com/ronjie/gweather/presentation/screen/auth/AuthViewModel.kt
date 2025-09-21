@@ -3,6 +3,7 @@ package com.ronjie.gweather.presentation.screen.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ronjie.gweather.domain.repository.AuthRepository
+import com.ronjie.gweather.utils.getFriendlyAuthErrorMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,7 +34,10 @@ class AuthViewModel @Inject constructor(
             _authState.value = if (result.isSuccess) {
                 AuthState.Success
             } else {
-                AuthState.Error(result.errorMessage ?: "Unknown error occurred")
+                val friendlyMessage = result.errorMessage?.let { error ->
+                    getFriendlyAuthErrorMessage(Exception(error))
+                } ?: "An unknown error occurred"
+                AuthState.Error(friendlyMessage)
             }
         }
     }
@@ -45,7 +49,12 @@ class AuthViewModel @Inject constructor(
             _authState.value = if (result.isSuccess) {
                 AuthState.Success
             } else {
-                AuthState.Error(result.errorMessage ?: "Unknown error occurred")
+                val friendlyMessage = result.errorMessage?.let { error ->
+                    getFriendlyAuthErrorMessage(Exception(error))
+                } ?: "An unknown error occurred"
+                println("Auth error: $friendlyMessage")
+
+                AuthState.Error(friendlyMessage)
             }
         }
     }
@@ -54,19 +63,4 @@ class AuthViewModel @Inject constructor(
         authRepository.signOut()
         _authState.value = AuthState.SignedOut
     }
-}
-
-sealed class AuthEvent {
-    data class SignIn(val email: String, val password: String) : AuthEvent()
-    data class SignUp(val email: String, val password: String) : AuthEvent()
-    object SignOut : AuthEvent()
-    object ResetState : AuthEvent()
-}
-
-sealed class AuthState {
-    object Initial : AuthState()
-    object Loading : AuthState()
-    object Success : AuthState()
-    object SignedOut : AuthState()
-    data class Error(val message: String) : AuthState()
 }
