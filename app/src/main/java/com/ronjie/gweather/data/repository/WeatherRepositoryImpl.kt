@@ -41,11 +41,11 @@ class WeatherRepositoryImpl @Inject constructor(
                 ?.toDomain()
 
             val weather = if (
-                response.coordinatesDTO?.latitude == 0.0 &&
-                response.coordinatesDTO.longitude == 0.0
+                response.coordinatesDTO?.latitude != 0.0 &&
+                response.coordinatesDTO?.longitude != 0.0
             ) {
                 response.copy(
-                    coordinatesDTO = response.coordinatesDTO.copy(
+                    coordinatesDTO = response.coordinatesDTO?.copy(
                         latitude = latitude,
                         longitude = longitude
                     )

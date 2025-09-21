@@ -52,7 +52,6 @@ class AuthViewModel @Inject constructor(
                 val friendlyMessage = result.errorMessage?.let { error ->
                     getFriendlyAuthErrorMessage(Exception(error))
                 } ?: "An unknown error occurred"
-                println("Auth error: $friendlyMessage")
 
                 AuthState.Error(friendlyMessage)
             }

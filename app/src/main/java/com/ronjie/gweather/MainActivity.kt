@@ -1,10 +1,10 @@
 package com.ronjie.gweather
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -21,9 +21,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -31,8 +36,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
+import com.ronjie.gweather.domain.model.Coordinates
 import com.ronjie.gweather.navigation.Screen
 import com.ronjie.gweather.presentation.MainViewModel
+import com.ronjie.gweather.presentation.common.isPermissionGranted
 import com.ronjie.gweather.presentation.component.GlobalSnackbar
 import com.ronjie.gweather.presentation.component.MessageManager
 import com.ronjie.gweather.presentation.component.rememberMessageManager
@@ -56,16 +63,15 @@ class MainActivity : ComponentActivity() {
     lateinit var locationProvider: LocationProvider
     private val auth = FirebaseAuth.getInstance()
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Handle the splash screen transition
+
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Keep the splash screen on-screen until the app is ready
-        splashScreen.setKeepOnScreenCondition { 
-            // You can add any conditions here if you need to wait for something
-            false 
+        splashScreen.setKeepOnScreenCondition {
+            false
         }
 
         locationProvider.initialize(this)
@@ -77,6 +83,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             GWeatherTheme {
                 val navController = rememberNavController()
+                val mainViewModel: MainViewModel = hiltViewModel()
+                val weatherViewModel: WeatherViewModel = hiltViewModel()
+                val currentLocationState by mainViewModel.currentLocation.collectAsStateWithLifecycle()
                 val startDestination = if (auth.currentUser != null) {
                     Screen.WEATHER_ROUTE
                 } else {
@@ -86,13 +95,42 @@ class MainActivity : ComponentActivity() {
                 val messageManager = rememberMessageManager()
                 val scope = rememberCoroutineScope()
 
+                LaunchedEffect(currentLocationState) {
+                    if (currentLocationState.latitude != 0.0 || currentLocationState.longitude != 0.0) {
+                        weatherViewModel.loadWeather(
+                            latitude = currentLocationState.latitude,
+                            longitude = currentLocationState.longitude,
+                        )
+                    }
+                }
+                var shouldCollectLocation by remember { mutableStateOf(true) }
+                LifecycleResumeEffect(
+                    isPermissionGranted(
+                        context = this,
+                        permission = Manifest.permission.ACCESS_FINE_LOCATION
+                    )
+                ) {
+                    shouldCollectLocation = true
+                    onPauseOrDispose { shouldCollectLocation = false }
+                }
+
+                LaunchedEffect(Unit, shouldCollectLocation) {
+                    locationProvider.locationUpdates.collect { location ->
+                        if (location.latitude != 0.0 || location.longitude != 0.0) {
+                            mainViewModel.updateLocation(location)
+                            weatherViewModel.loadWeather(location.latitude, location.longitude)
+                        }
+                    }
+                }
+
                 CompositionLocalProvider(
                     LocalMessageManager provides messageManager
                 ) {
                     MainScreen(
                         navController = navController,
                         startDestination = startDestination,
-                        locationProvider = locationProvider,
+                        currentLocationState = currentLocationState,
+                        weatherViewModel = weatherViewModel,
                         onSignOut = {
                             scope.launch {
                                 auth.signOut()
@@ -114,12 +152,11 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(
     navController: NavHostController,
     startDestination: String,
-    locationProvider: LocationProvider,
+    weatherViewModel: WeatherViewModel,
+    currentLocationState: Coordinates,
     onSignOut: () -> Unit,
     messageManager: MessageManager
 ) {
-    val mainViewModel: MainViewModel = hiltViewModel()
-    val currentLocationState by mainViewModel.currentLocation.collectAsStateWithLifecycle()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.WEATHER_ROUTE
     val scope = rememberCoroutineScope()
@@ -193,26 +230,6 @@ fun MainScreen(
             }
 
             composable(Screen.WEATHER_ROUTE) {
-                val weatherViewModel = hiltViewModel<WeatherViewModel>()
-
-                LaunchedEffect(currentLocationState) {
-                    if (currentLocationState.latitude != 0.0 || currentLocationState.longitude != 0.0) {
-                        weatherViewModel.loadWeather(
-                            latitude = currentLocationState.latitude,
-                            longitude = currentLocationState.longitude,
-                        )
-                    }
-                }
-
-                LaunchedEffect(Unit) {
-                    locationProvider.locationUpdates.collect { location ->
-                        if (location.latitude != 0.0 || location.longitude != 0.0) {
-                            mainViewModel.updateLocation(location)
-                            weatherViewModel.loadWeather(location.latitude, location.longitude)
-                        }
-                    }
-                }
-
                 WeatherScreen(
                     modifier = Modifier,
                     viewModel = weatherViewModel,

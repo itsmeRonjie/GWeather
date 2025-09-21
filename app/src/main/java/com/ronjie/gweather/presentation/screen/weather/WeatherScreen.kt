@@ -1,5 +1,7 @@
 package com.ronjie.gweather.presentation.screen.weather
 
+import android.Manifest
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,11 +10,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,12 +28,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.ronjie.gweather.domain.model.Weather
+import com.ronjie.gweather.presentation.common.PermissionRequester
 import com.ronjie.gweather.presentation.common.WeatherDetails
+import com.ronjie.gweather.presentation.common.isPermissionGranted
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -82,21 +91,44 @@ fun WeatherScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    contentAlignment = Alignment.TopCenter
+                    contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
                 }
             }
 
             if (uiState is WeatherUiState.Error && currentWeather == null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                val isGranted = remember { mutableStateOf(false) }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = (uiState as WeatherUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error
-                    )
+
+                    if (!isPermissionGranted(
+                            context = LocalContext.current,
+                            permission = Manifest.permission.ACCESS_FINE_LOCATION,
+                        ) && !isGranted.value
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Error,
+                            contentDescription = "Error",
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Text(text = "Error fetching weather")
+                        TextButton(
+                            onClick = {
+                                viewModel.loadWeather(latitude, longitude)
+                            }
+                        ) { Text(text = "Retry") }
+                        PermissionRequester(
+                            permission = Manifest.permission.ACCESS_FINE_LOCATION,
+                            onPermissionGranted = { isGranted.value = true }
+                        )
+                    }
                 }
             }
         }
@@ -130,10 +162,7 @@ fun WeatherContent(weather: Weather) {
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-//
-//        Image(
-//            painter = painterResource(id = R.drawable.sun),),
-//        )
+
         AsyncImage(
             model = weather.getWeatherIconUrl(),
             contentDescription = weather.weatherDescription,
