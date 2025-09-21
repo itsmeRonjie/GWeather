@@ -94,54 +94,19 @@ jobs:
           
           # Output Gradle properties for other jobs
           echo "gradle-properties=$(cat ~/.gradle/gradle.properties | base64 -w0)" >> $GITHUB_OUTPUT
-          
-          # Save the generated files as artifacts
-          mkdir -p ci-files/app
-          cp -r ~/.gradle ci-files/
-          cp local.properties ci-files/
-          cp -r app/google-services.json ci-files/app/
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-files
-          path: ci-files/
-          retention-days: 1
 
   test:
     name: Run Tests
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ci-files
-          path: .
-
-      - name: Restore environment
-        run: |
-          # Restore Gradle properties and local.properties
-          mkdir -p ~/.gradle
-          cp -r ci-files/.gradle/* ~/.gradle/
-          cp ci-files/local.properties .
-          
-          # Restore app files
-          mkdir -p app
-          cp ci-files/app/google-services.json app/
-          
-          # Make gradlew executable
-          chmod +x gradlew
-
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
+      - name: Restore Gradle properties
+        run: |
+          mkdir -p ~/.gradle
+          echo "${{ needs.setup.outputs.gradle-properties }}" | base64 -d > ~/.gradle/gradle.properties
 
       - name: Run unit tests
         run: |
@@ -149,32 +114,17 @@ jobs:
 
   build:
     name: Build APK
-    needs: [setup, test]
+    needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ci-files
-          path: .
-
-      - name: Restore environment
+      - name: Restore Gradle properties
         run: |
-          # Restore Gradle properties and local.properties
           mkdir -p ~/.gradle
-          cp -r ci-files/.gradle/* ~/.gradle/ || true
-          cp ci-files/local.properties . || true
-          
-          # Restore app files
-          mkdir -p app
-          cp ci-files/app/google-services.json app/ 2>/dev/null || true
-          
-          # Make gradlew executable
-          chmod +x gradlew
+          echo "${{ needs.setup.outputs.gradle-properties }}" | base64 -d > ~/.gradle/gradle.properties
 
       - name: Build debug APK
         run: |
