@@ -1,6 +1,12 @@
 package com.ronjie.gweather.presentation.screen.auth
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -49,13 +55,14 @@ fun AuthScreen(
     val isEmailValid = remember(email) {
         android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
+
     val isPasswordValid = remember(password, confirmPassword, isLogin) {
         password.isNotEmpty() && (isLogin || (password == confirmPassword && password.length >= 6))
     }
+
     val isFormValid = isEmailValid && isPasswordValid && email.isNotEmpty()
 
     val authState = viewModel.authState.collectAsState()
-
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -87,11 +94,17 @@ fun AuthScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = if (isLogin) "Sign In" else "Create Account",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
+        AnimatedContent(
+            targetState = isLogin,
+            transitionSpec = { fadeIn().togetherWith(fadeOut()) },
+            label = "titleAnimation"
+        ) { isLoginState ->
+            Text(
+                text = if (isLoginState) "Sign In" else "Create Account",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+        }
 
         OutlinedTextField(
             value = email,
@@ -105,7 +118,7 @@ fun AuthScreen(
             modifier = Modifier.fillMaxWidth(),
             isError = email.isNotEmpty() && !isEmailValid,
             supportingText = {
-                if (email.isNotEmpty() && !isEmailValid) {
+                AnimatedVisibility(email.isNotEmpty() && !isEmailValid) {
                     Text("Please enter a valid email address")
                 }
             }
@@ -140,7 +153,7 @@ fun AuthScreen(
                 modifier = Modifier.fillMaxWidth(),
                 isError = confirmPassword.isNotEmpty() && password != confirmPassword,
                 supportingText = {
-                    if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                    AnimatedVisibility(confirmPassword.isNotEmpty() && password != confirmPassword) {
                         Text("Passwords don't match")
                     }
                 }
@@ -166,7 +179,13 @@ fun AuthScreen(
             if (authState.value == AuthState.Loading) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
             } else {
-                Text(if (isLogin) "Sign In" else "Sign Up")
+                AnimatedContent(
+                    targetState = isLogin,
+                    transitionSpec = { fadeIn().togetherWith(fadeOut()) },
+                    label = "authButtonText"
+                ) { isLoginState ->
+                    Text(if (isLoginState) "Sign In" else "Create Account")
+                }
             }
         }
 
@@ -177,23 +196,43 @@ fun AuthScreen(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = if (isLogin) "Need an account?" else "Already have an account?",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            AnimatedContent(
+                targetState = isLogin,
+                transitionSpec = {
+                    (slideInHorizontally { it } + fadeIn())
+                        .togetherWith(slideOutHorizontally { -it } + fadeOut())
+                },
+                label = "signInSignUpText"
+            ) { isLoginState ->
+                val text = if (isLoginState) "Need an account?" else "Already have an account?"
+                Text(
+                    text = text,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = if (isLogin) "Sign up" else "Sign in",
-                modifier = Modifier.clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    isLogin = !isLogin
-                    if (isLogin) confirmPassword = ""
+            AnimatedContent(
+                targetState = isLogin,
+                transitionSpec = {
+                    (slideInHorizontally { -it } + fadeIn())
+                        .togetherWith(slideOutHorizontally { it } + fadeOut())
                 },
-                color = MaterialTheme.colorScheme.primary,
-            )
+                label = "signInSignUpButton"
+            ) { isLoginState ->
+                val text = if (isLoginState) "Sign up" else "Sign in"
+                Text(
+                    text = text,
+                    modifier = Modifier.clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        isLogin = !isLogin
+                        if (isLogin) confirmPassword = ""
+                    },
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }
