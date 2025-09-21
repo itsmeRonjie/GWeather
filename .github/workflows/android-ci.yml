@@ -34,6 +34,12 @@ jobs:
         platform-version: '34'
         ndk-version: '26.1.10909125'
         cmake-version: '3.22.1'
+    
+    - name: Accept Android SDK licenses
+      run: |
+        mkdir -p ~/.android
+        touch ~/.android/repositories.cfg
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
     # Minimal setup for unit tests
     - name: Setup environment
