@@ -35,11 +35,10 @@ jobs:
           cmdline-tools-version: 'latest'
           accept-android-sdk-licenses: true
           packages: |
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
-            ndk;26.1.10909125
-            cmake;3.22.1
+          build-tools-version: '34.0.0'
+          platform-version: '34'
+          ndk-version: '26.1.10909125'
+          cmake-version: '3.22.1'
 
       - name: Accept Android SDK licenses
         run: |
@@ -103,7 +102,7 @@ jobs:
           
           # Output Gradle properties for other jobs
           echo "gradle-properties=$(cat ~/.gradle/gradle.properties | base64 -w0)" >> $GITHUB_OUTPUT
-          
+
       - name: Upload setup files
         uses: actions/upload-artifact@v4
         with:
@@ -118,13 +117,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Download setup files
         uses: actions/download-artifact@v4
         with:
           name: setup-files
           path: ./
-          
+
       - name: Restore environment
         run: |
           mkdir -p ~/.gradle
@@ -146,13 +145,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Download setup files
         uses: actions/download-artifact@v4
         with:
           name: setup-files
           path: ./
-          
+
       - name: Restore environment
         run: |
           mkdir -p ~/.gradle
