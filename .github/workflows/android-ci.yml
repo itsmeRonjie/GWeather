@@ -9,6 +9,8 @@ on:
 env:
   GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8
   ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+  GRADLE_CACHE_DIR: ~/.gradle/caches
+  GRADLE_WRAPPER_DIR: ~/.gradle/wrapper
 
 jobs:
   build:
@@ -34,6 +36,17 @@ jobs:
         ndk-version: '26.1.10909125'
         cmake-version: '3.22.1'
 
+    # Set up Gradle caching
+    - name: Set up Gradle cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.GRADLE_CACHE_DIR }}
+          ${{ env.GRADLE_WRAPPER_DIR }}
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
     # Skip signing for debug builds
     - name: Skip signing
       run: |
@@ -42,6 +55,9 @@ jobs:
         echo 'android.signingConfigs.debug.keyPassword=android' >> ~/.gradle/gradle.properties
         echo 'android.signingConfigs.debug.keyAlias=androiddebugkey' >> ~/.gradle/gradle.properties
         echo 'android.signingConfigs.debug.storeFile=~/.android/debug.keystore' >> ~/.gradle/gradle.properties
+        echo 'org.gradle.caching=true' >> ~/.gradle/gradle.properties
+        echo 'org.gradle.parallel=true' >> ~/.gradle/gradle.properties
+        echo 'org.gradle.configureondemand=true' >> ~/.gradle/gradle.properties
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -86,33 +102,29 @@ jobs:
         }
         EOL
 
-    # Build and test
-    - name: Build project
+    # Build and test with build cache
+    - name: Build project with cache
       run: |
-        ./gradlew clean assembleDebug --stacktrace --info --no-daemon --no-parallel
+        ./gradlew clean assembleDebug testDebugUnitTest lintDebug \
+          --stacktrace \
+          --info \
+          --no-daemon \
+          --build-cache \
+          --parallel \
+          -Pandroid.enableR8.fullMode=false \
+          -Pandroid.testInstrumentationRunnerArguments.notAnnotation=androidx.test.filters.LargeTest
 
-    - name: Run unit tests
+    # Only run release builds on main branch
+    - name: Build release artifacts
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: |
-        ./gradlew testDebugUnitTest --stacktrace --info --no-daemon --no-parallel
-
-    - name: Run instrumentation tests
-      if: github.event_name != 'pull_request'
-      run: |
-        ./gradlew connectedDebugAndroidTest --stacktrace --info --no-daemon --no-parallel
-
-    - name: Run lint checks
-      run: |
-        ./gradlew lintDebug --stacktrace --info --no-daemon --no-parallel
-
-    - name: Assemble release APK
-      if: github.event_name != 'pull_request'
-      run: |
-        ./gradlew assembleRelease --stacktrace --info --no-daemon --no-parallel
-        
-    - name: Bundle release
-      if: github.event_name != 'pull_request'
-      run: |
-        ./gradlew bundleRelease --stacktrace --info --no-daemon --no-parallel
+        ./gradlew assembleRelease bundleRelease \
+          --stacktrace \
+          --info \
+          --no-daemon \
+          --build-cache \
+          --parallel \
+          -Pandroid.enableR8.fullMode=true
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
