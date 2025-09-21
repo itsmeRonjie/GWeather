@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -47,6 +48,7 @@ import com.ronjie.gweather.presentation.screen.auth.AuthScreen
 import com.ronjie.gweather.presentation.screen.auth.AuthState
 import com.ronjie.gweather.presentation.screen.auth.AuthViewModel
 import com.ronjie.gweather.presentation.screen.history.HistoryScreen
+import com.ronjie.gweather.presentation.screen.settings.SettingsScreen
 import com.ronjie.gweather.presentation.screen.weather.WeatherScreen
 import com.ronjie.gweather.presentation.screen.weather.WeatherViewModel
 import com.ronjie.gweather.presentation.theme.GWeatherTheme
@@ -163,7 +165,7 @@ fun MainScreen(
 
     Scaffold(
         bottomBar = {
-            if (currentRoute != Screen.AUTH_ROUTE) {
+            if (currentRoute != Screen.AUTH_ROUTE && currentRoute != Screen.SETTINGS_ROUTE) {
                 NavigationBar {
                     Screen.bottomNavItems.forEach { screen ->
                         val screenRoute = screen.route
@@ -239,11 +241,24 @@ fun MainScreen(
                         scope.launch {
                             messageManager.showMessage(error, isError = true)
                         }
+                    },
+                    onSettingsClick = {
+                        navController.navigate(Screen.SETTINGS_ROUTE)
                     }
                 )
             }
             composable(Screen.HISTORY_ROUTE) {
                 HistoryScreen()
+            }
+
+            composable(
+                route = Screen.SETTINGS_ROUTE,
+                popEnterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) },
+                popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left) }) {
+                SettingsScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onLogout = onSignOut
+                )
             }
         }
 

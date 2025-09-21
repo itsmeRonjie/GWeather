@@ -3,11 +3,9 @@ package com.ronjie.gweather.utils
 import com.google.firebase.auth.FirebaseAuthException
 
 fun getFriendlyAuthErrorMessage(exception: Exception): String {
-    // First check if the exception message contains any known error patterns
     val message = exception.message ?: "An unknown error occurred"
 
     return when {
-        // Handle Firebase Auth exceptions
         exception is FirebaseAuthException -> {
             when (exception.errorCode) {
                 "ERROR_INVALID_EMAIL" -> "Please enter a valid email address"
