@@ -131,6 +131,9 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
 
+    // Splash Screen API
+    implementation(libs.androidx.core.splashscreen)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk.android)

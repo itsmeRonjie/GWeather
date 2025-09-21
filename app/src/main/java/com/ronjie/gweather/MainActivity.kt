@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -56,8 +57,16 @@ class MainActivity : ComponentActivity() {
     private val auth = FirebaseAuth.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Handle the splash screen transition
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Keep the splash screen on-screen until the app is ready
+        splashScreen.setKeepOnScreenCondition { 
+            // You can add any conditions here if you need to wait for something
+            false 
+        }
 
         locationProvider.initialize(this)
 
