@@ -32,10 +32,14 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          build-tools-version: '34.0.0'
-          platform-version: '34'
-          ndk-version: '26.1.10909125'
-          cmake-version: '3.22.1'
+          cmdline-tools-version: 'latest'
+          accept-android-sdk-licenses: true
+          packages: |
+            platform-tools
+            platforms;android-34
+            build-tools;34.0.0
+            ndk;26.1.10909125
+            cmake;3.22.1
 
       - name: Accept Android SDK licenses
         run: |
