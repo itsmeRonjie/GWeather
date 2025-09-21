@@ -32,9 +32,6 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          cmdline-tools-version: 'latest'
-          accept-android-sdk-licenses: true
-          packages: |
           build-tools-version: '34.0.0'
           platform-version: '34'
           ndk-version: '26.1.10909125'
@@ -44,6 +41,7 @@ jobs:
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Setup environment
         id: setup
@@ -91,24 +89,8 @@ jobs:
           
           chmod +x gradlew
           
-          # Create setup artifacts
-          mkdir -p setup-files/app
-          cp -r ~/.gradle/gradle.properties setup-files/
-          cp local.properties setup-files/
-          cp app/google-services.json setup-files/app/
-          
-          # Upload setup files as artifact
-          echo "setup_files=setup-files" >> $GITHUB_OUTPUT
-          
           # Output Gradle properties for other jobs
           echo "gradle-properties=$(cat ~/.gradle/gradle.properties | base64 -w0)" >> $GITHUB_OUTPUT
-
-      - name: Upload setup files
-        uses: actions/upload-artifact@v4
-        with:
-          name: setup-files
-          path: ${{ steps.setup.outputs.setup_files }}
-          retention-days: 1
 
   test:
     name: Run Tests
@@ -118,20 +100,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download setup files
-        uses: actions/download-artifact@v4
-        with:
-          name: setup-files
-          path: ./
-
-      - name: Restore environment
+      - name: Restore Gradle properties
         run: |
           mkdir -p ~/.gradle
-          cp setup-files/gradle.properties ~/.gradle/
-          cp setup-files/local.properties .
-          mkdir -p app
-          cp setup-files/app/google-services.json app/
-          chmod +x gradlew
+          echo "${{ needs.setup.outputs.gradle-properties }}" | base64 -d > ~/.gradle/gradle.properties
 
       - name: Run unit tests
         run: |
@@ -146,20 +118,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download setup files
-        uses: actions/download-artifact@v4
-        with:
-          name: setup-files
-          path: ./
-
-      - name: Restore environment
+      - name: Restore Gradle properties
         run: |
           mkdir -p ~/.gradle
-          cp setup-files/gradle.properties ~/.gradle/
-          cp setup-files/local.properties .
-          mkdir -p app
-          cp setup-files/app/google-services.json app/
-          chmod +x gradlew
+          echo "${{ needs.setup.outputs.gradle-properties }}" | base64 -d > ~/.gradle/gradle.properties
 
       - name: Build debug APK
         run: |
@@ -170,4 +132,4 @@ jobs:
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 1
+          retention-days: 5
