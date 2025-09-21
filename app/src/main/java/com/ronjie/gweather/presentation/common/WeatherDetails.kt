@@ -23,9 +23,7 @@ fun WeatherDetails(weather: Weather) {
             .padding(vertical = 8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(18.dp)
-        ) {
+        Column(modifier = Modifier.padding(18.dp)) {
             DetailRow(
                 label = "Sunrise",
                 value = weather.getSunriseTime()
@@ -37,7 +35,7 @@ fun WeatherDetails(weather: Weather) {
                 value = weather.getSunsetTime()
             )
             CustomDivider()
-            
+
             DetailRow(
                 label = "Feels like",
                 value = "${weather.feelsLike.toInt()}°C"
