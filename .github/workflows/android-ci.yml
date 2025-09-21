@@ -1,4 +1,4 @@
-name: Android CI
+name: Fast CI - Test & Build
 
 on:
   push:
@@ -12,11 +12,9 @@ env:
   GRADLE_CACHE_DIR: ~/.gradle/caches
 
 jobs:
-  setup:
-    name: Setup Environment
+  build:
+    name: Build and Test
     runs-on: ubuntu-latest
-    outputs:
-      gradle-properties: ${{ steps.setup.outputs.gradle-properties }}
 
     steps:
       - name: Checkout code
@@ -37,29 +35,64 @@ jobs:
           ndk-version: '26.1.10909125'
           cmake-version: '3.22.1'
 
+      - name: Accept Android SDK licenses
+        run: |
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       # Minimal setup for unit tests
       - name: Setup environment
         run: |
           # Basic Gradle properties
           mkdir -p ~/.gradle
-          echo 'org.gradle.caching=true' > ~/.gradle/gradle.properties
-          echo 'org.gradle.parallel=true' >> ~/.gradle/gradle.properties
-          echo 'org.gradle.daemon=false' >> ~/.gradle/gradle.properties
+          cat > ~/.gradle/gradle.properties << 'EOL'
+          org.gradle.caching=true
+          org.gradle.parallel=true
+          org.gradle.daemon=false
+          # Disable Firebase and Crashlytics in CI
+          android.defaults.buildfeatures.buildconfig=true
+          firebaseCrashlytics.mappingFileUpdateEnabled=false
+          android.enableFirebase=false
+          EOL
           
           # Local properties
           echo 'sdk.dir=$ANDROID_HOME' > local.properties
           
-          # Minimal google-services.json
-          mkdir -p app/src/debug
-          echo '{}' > app/google-services.json
+          # Create a valid google-services.json with required fields
+          mkdir -p app
+          cat > app/google-services.json << 'EOL'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "dummy-project-id",
+              "storage_bucket": "dummy-bucket.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "com.ronjie.gweather"
+                  }
+                },
+                "api_key": [
+                  {
+                    "current_key": "dummy-key"
+                  }
+                ]
+              }
+            ]
+          }
+          EOL
           
           # Grant execute permission
           chmod +x gradlew
 
-      # Run unit tests only - this is the fastest way to verify the build
+      # Run unit tests with Firebase disabled
       - name: Run unit tests
         run: |
-          ./gradlew testDebugUnitTest --stacktrace --no-daemon
+          ./gradlew testDebugUnitTest --stacktrace --no-daemon -Pandroid.enableFirebase=false
 
       # Only build debug APK on main branch (skipped in PRs)
       - name: Build debug APK
