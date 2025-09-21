@@ -21,8 +21,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -51,6 +57,8 @@ fun AuthScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     val isEmailValid = remember(email) {
         android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
@@ -121,6 +129,12 @@ fun AuthScreen(
                 AnimatedVisibility(email.isNotEmpty() && !isEmailValid) {
                     Text("Please enter a valid email address")
                 }
+            },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.Email,
+                    contentDescription = "Email"
+                )
             }
         )
 
@@ -129,12 +143,20 @@ fun AuthScreen(
             onValueChange = { password = it },
             label = { Text("Password") },
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = if (isLogin) ImeAction.Done else ImeAction.Next
             ),
             modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                val description = if (passwordVisible) "Hide password" else "Show password"
+
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = description)
+                }
+            },
             isError = !isLogin && password.isNotEmpty() && confirmPassword.isNotEmpty() && password != confirmPassword
         )
 
@@ -145,13 +167,23 @@ fun AuthScreen(
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirm Password") },
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (confirmPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
                 ),
                 modifier = Modifier.fillMaxWidth(),
                 isError = confirmPassword.isNotEmpty() && password != confirmPassword,
+                trailingIcon = {
+                    val image =
+                        if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    val description =
+                        if (confirmPasswordVisible) "Hide password" else "Show password"
+
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(imageVector = image, contentDescription = description)
+                    }
+                },
                 supportingText = {
                     AnimatedVisibility(confirmPassword.isNotEmpty() && password != confirmPassword) {
                         Text("Passwords don't match")
