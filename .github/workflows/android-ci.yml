@@ -1,5 +1,3 @@
-name: Android CI
-
 on:
   push:
     branches: [ main ]
@@ -12,11 +10,9 @@ env:
   GRADLE_CACHE_DIR: ~/.gradle/caches
 
 jobs:
-  setup:
-    name: Setup Environment
+  build:
+    name: Build and Test
     runs-on: ubuntu-latest
-    outputs:
-      gradle-properties: ${{ steps.setup.outputs.gradle-properties }}
 
     steps:
       - name: Checkout code
@@ -43,27 +39,25 @@ jobs:
           touch ~/.android/repositories.cfg
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
+      # Minimal setup for unit tests
       - name: Setup environment
-        id: setup
         run: |
-          # Create and output Gradle properties
+          # Basic Gradle properties
           mkdir -p ~/.gradle
           cat > ~/.gradle/gradle.properties << 'EOL'
           org.gradle.caching=true
           org.gradle.parallel=true
           org.gradle.daemon=false
+          # Disable Firebase and Crashlytics in CI
           android.defaults.buildfeatures.buildconfig=true
           firebaseCrashlytics.mappingFileUpdateEnabled=false
-          # Disable Firebase for CI builds
-          firebase.analytics.deactivated=true
-          firebase.crashlytics.mappingFileUpdateEnabled=false
-          android.injected.testOnly=false
+          android.enableFirebase=false
           EOL
           
-          # Create local.properties
+          # Local properties
           echo 'sdk.dir=$ANDROID_HOME' > local.properties
           
-          # Create minimal google-services.json
+          # Create a valid google-services.json with required fields
           mkdir -p app
           cat > app/google-services.json << 'EOL'
           {
@@ -90,49 +84,17 @@ jobs:
           }
           EOL
           
+          # Grant execute permission
           chmod +x gradlew
-          
-          # Output Gradle properties for other jobs
-          echo "gradle-properties=$(cat ~/.gradle/gradle.properties | base64 -w0)" >> $GITHUB_OUTPUT
 
-  test:
-    name: Run Tests
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Restore Gradle properties
-        run: |
-          mkdir -p ~/.gradle
-          echo "${{ needs.setup.outputs.gradle-properties }}" | base64 -d > ~/.gradle/gradle.properties
-
+      # Run unit tests with Firebase disabled
       - name: Run unit tests
         run: |
           ./gradlew testDebugUnitTest --stacktrace --no-daemon -Pandroid.enableFirebase=false
 
-  build:
-    name: Build APK
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Restore Gradle properties
-        run: |
-          mkdir -p ~/.gradle
-          echo "${{ needs.setup.outputs.gradle-properties }}" | base64 -d > ~/.gradle/gradle.properties
-
+      # Only build debug APK on main branch (skipped in PRs)
       - name: Build debug APK
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           ./gradlew assembleDebug --stacktrace --no-daemon
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 1
