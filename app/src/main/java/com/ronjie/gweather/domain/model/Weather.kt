@@ -40,6 +40,9 @@ data class Weather(
     val maxTemperatureCelsius: Double
         get() = tempMax - 273.15
 
+    val formattedTimestamp: String
+        get() = formatTimestamp(timestamp)
+
     fun getSunriseTime(): String {
         return formatTime(sunrise, timezone)
     }
@@ -66,5 +69,13 @@ data class Weather(
     private fun formatTime(timestamp: Long, timezone: Int): String {
         val date = Date((timestamp + timezone) * 1000L)
         return SimpleDateFormat("h:mm a", Locale.getDefault()).format(date)
+    }
+
+
+    private fun formatTimestamp(timestamp: Long): String {
+        return SimpleDateFormat(
+            "MMM d, yyyy h:mm a",
+            Locale.getDefault()
+        ).format(timestamp)
     }
 }

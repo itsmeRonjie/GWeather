@@ -114,3 +114,33 @@ fun WeatherResponseDTO.toEntity(): WeatherEntity {
         countryCode = sysDTO?.country ?: "PH"
     )
 }
+
+fun WeatherEntity.toDomain(): Weather {
+    return Weather(
+        location = location,
+        coordinates = Coordinates(
+            latitude = coordinates.latitude,
+            longitude = coordinates.longitude,
+        ),
+        temperature = temperature,
+        feelsLike = feelsLike,
+        tempMin = tempMin,
+        tempMax = tempMax,
+        pressure = pressure,
+        humidity = humidity,
+        weatherId = id.toInt(),
+        weatherMain = weatherMain,
+        weatherDescription = weatherDescription,
+        weatherIcon = weatherIcon,
+        windSpeed = windSpeed,
+        windDegrees = windDegrees,
+        cloudiness = cloudiness,
+        sunrise = sunrise,
+        sunset = sunset,
+        timezone = timezone,
+        visibility = visibility,
+        countryCode = countryCode,
+        timestamp = timestamp
+    )
+
+}
