@@ -2,23 +2,23 @@ package com.ronjie.gweather.data.model
 
 import com.google.gson.annotations.SerializedName
 
-data class WeatherResponse(
+data class WeatherResponseDTO(
     @SerializedName("coord")
-    val coordinates: Coordinates?,
+    val coordinatesDTO: CoordinatesDTO?,
     @SerializedName("weather")
-    val weather: List<Weather>?,
+    val weatherDTO: List<WeatherDTO>?,
     @SerializedName("main")
-    val main: Main?,
+    val mainDTO: MainDTO?,
     @SerializedName("visibility")
     val visibility: Int?,
     @SerializedName("wind")
-    val wind: Wind?,
+    val windDTO: WindDTO?,
     @SerializedName("clouds")
-    val clouds: Clouds?,
+    val cloudsDTO: CloudsDTO?,
     @SerializedName("dt")
     val dateTime: Long?,
     @SerializedName("sys")
-    val sys: Sys?,
+    val sysDTO: SysDTO?,
     @SerializedName("timezone")
     val timezone: Int?,
     @SerializedName("id")
@@ -29,14 +29,14 @@ data class WeatherResponse(
     val code: Int?
 )
 
-data class Coordinates(
+data class CoordinatesDTO(
     @SerializedName("lon")
     val longitude: Double?,
     @SerializedName("lat")
     val latitude: Double?
 )
 
-data class Weather(
+data class WeatherDTO(
     @SerializedName("id")
     val id: Int?,
     @SerializedName("main")
@@ -47,7 +47,7 @@ data class Weather(
     val icon: String?
 )
 
-data class Main(
+data class MainDTO(
     @SerializedName("temp")
     val temperature: Double?,
     @SerializedName("feels_like")
@@ -66,7 +66,7 @@ data class Main(
     val groundLevel: Int? = null
 )
 
-data class Wind(
+data class WindDTO(
     @SerializedName("speed")
     val speed: Double,
     @SerializedName("deg")
@@ -75,12 +75,12 @@ data class Wind(
     val gust: Double? = null
 )
 
-data class Clouds(
+data class CloudsDTO(
     @SerializedName("all")
     val all: Int?
 )
 
-data class Sys(
+data class SysDTO(
     @SerializedName("type")
     val type: Int?,
     @SerializedName("id")

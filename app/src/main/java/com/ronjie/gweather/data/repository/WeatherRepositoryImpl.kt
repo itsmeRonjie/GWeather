@@ -1,8 +1,8 @@
 package com.ronjie.gweather.data.repository
 
 import com.ronjie.gweather.data.local.entity.WeatherEntity
+import com.ronjie.gweather.data.mapper.toDTO
 import com.ronjie.gweather.data.mapper.toDomain
-import com.ronjie.gweather.data.mapper.toEntity
 import com.ronjie.gweather.data.remote.WeatherRemoteDataSource
 import com.ronjie.gweather.domain.model.Coordinates
 import com.ronjie.gweather.domain.model.Weather
@@ -30,25 +30,37 @@ class WeatherRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentWeather(
         latitude: Double,
-        longitude: Double
+        longitude: Double,
+        saveToDatabase: Boolean
     ): Result<Weather> {
         return try {
             val response = remoteDataSource.getCurrentWeather(latitude, longitude, apiKey)
 
-            val weather =
-                if (response.coordinates?.latitude == 0.0 && response.coordinates.longitude == 0.0) {
-                    response.copy(
-                        coordinates = response.coordinates.copy(
-                            latitude = latitude,
-                            longitude = longitude
-                        )
-                    ).toDomain()
-                } else {
-                    response.toDomain()
-                }
+            val weather = if (
+                response.coordinatesDTO?.latitude == 0.0 &&
+                response.coordinatesDTO.longitude == 0.0
+            ) {
+                response.copy(
+                    coordinatesDTO = response.coordinatesDTO.copy(
+                        latitude = latitude,
+                        longitude = longitude
+                    )
+                ).toDomain()
+            } else response.toDomain()
 
-            if (areValidCoordinates(weather.coordinates.latitude, weather.coordinates.longitude)) {
-                cachedWeather = weather
+            if (areValidCoordinates(
+                    latitude = weather.coordinates.latitude,
+                    longitude = weather.coordinates.longitude
+                )
+            ) cachedWeather = weather
+            
+            if (saveToDatabase) {
+                saveWeather(
+                    weather = weather,
+                    locationName = weather.location,
+                    lat = latitude,
+                    lon = longitude
+                )
             }
 
             Result.success(weather)
@@ -68,7 +80,12 @@ class WeatherRepositoryImpl @Inject constructor(
         lon: Double
     ) {
         if (areValidCoordinates(lat, lon)) {
-            localDataSource.saveWeather(weather.toEntity(), locationName, lat, lon)
+            localDataSource.saveWeather(
+                weather = weather.toDTO(),
+                locationName = locationName,
+                lat = lat,
+                lon = lon
+            )
         }
     }
 
@@ -88,8 +105,8 @@ class WeatherRepositoryImpl @Inject constructor(
 
         return latestWeather?.let {
             Coordinates(
-                latitude = it.latitude,
-                longitude = it.longitude
+                latitude = it.coordinates.latitude,
+                longitude = it.coordinates.longitude
             )
         }
     }

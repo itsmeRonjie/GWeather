@@ -1,6 +1,6 @@
 package com.ronjie.gweather.data.remote
 
-import com.ronjie.gweather.data.model.WeatherResponse
+import com.ronjie.gweather.data.model.WeatherResponseDTO
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -11,5 +11,5 @@ interface WeatherApi {
         @Query("lon") longitude: Double,
         @Query("appid") apiKey: String,
         @Query("units") units: String = "metric"
-    ): WeatherResponse
+    ): WeatherResponseDTO
 }

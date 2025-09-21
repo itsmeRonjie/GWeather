@@ -7,7 +7,11 @@ import javax.inject.Inject
 class GetCurrentWeatherUseCase @Inject constructor(
     private val repository: WeatherRepository
 ) {
-    suspend operator fun invoke(latitude: Double, longitude: Double): Result<Weather> {
-        return repository.getCurrentWeather(latitude, longitude)
+    suspend operator fun invoke(
+        latitude: Double,
+        longitude: Double,
+        saveToDatabase: Boolean
+    ): Result<Weather> {
+        return repository.getCurrentWeather(latitude, longitude, saveToDatabase)
     }
 }

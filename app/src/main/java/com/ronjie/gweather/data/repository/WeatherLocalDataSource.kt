@@ -2,13 +2,14 @@ package com.ronjie.gweather.data.repository
 
 import com.ronjie.gweather.data.local.dao.WeatherDao
 import com.ronjie.gweather.data.local.entity.WeatherEntity
-import com.ronjie.gweather.data.model.WeatherResponse
+import com.ronjie.gweather.data.mapper.toEntity
+import com.ronjie.gweather.data.model.WeatherResponseDTO
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 interface WeatherLocalDataSource {
     suspend fun saveWeather(
-        weather: WeatherResponse,
+        weather: WeatherResponseDTO,
         locationName: String,
         lat: Double,
         lon: Double
@@ -24,18 +25,12 @@ class WeatherLocalDataSourceImpl @Inject constructor(
 ) : WeatherLocalDataSource {
 
     override suspend fun saveWeather(
-        weather: WeatherResponse,
+        weather: WeatherResponseDTO,
         locationName: String,
         lat: Double,
         lon: Double
     ) {
-        val entity = WeatherEntity(
-            locationName = locationName,
-            latitude = lat,
-            longitude = lon,
-            weatherData = weather
-        )
-        weatherDao.insertWeather(entity)
+        weatherDao.insertWeather(weather.toEntity())
     }
 
     override fun getWeatherHistory(): Flow<List<WeatherEntity>> {

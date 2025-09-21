@@ -1,6 +1,6 @@
 package com.ronjie.gweather.data.remote
 
-import com.ronjie.gweather.data.model.WeatherResponse
+import com.ronjie.gweather.data.model.WeatherResponseDTO
 import javax.inject.Inject
 
 class WeatherRemoteDataSource @Inject constructor(
@@ -10,7 +10,7 @@ class WeatherRemoteDataSource @Inject constructor(
         latitude: Double,
         longitude: Double,
         apiKey: String
-    ): WeatherResponse {
+    ): WeatherResponseDTO {
         return weatherApi.getCurrentWeather(
             latitude = latitude,
             longitude = longitude,

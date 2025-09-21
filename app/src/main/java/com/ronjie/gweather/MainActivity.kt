@@ -195,7 +195,7 @@ fun MainScreen(
                     if (currentLocationState.latitude != 0.0 || currentLocationState.longitude != 0.0) {
                         weatherViewModel.loadWeather(
                             currentLocationState.latitude,
-                            currentLocationState.longitude
+                            currentLocationState.longitude,
                         )
                     }
                 }

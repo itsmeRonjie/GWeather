@@ -6,7 +6,12 @@ import com.ronjie.gweather.domain.model.Weather
 import kotlinx.coroutines.flow.Flow
 
 interface WeatherRepository {
-    suspend fun getCurrentWeather(latitude: Double, longitude: Double): Result<Weather>
+    suspend fun getCurrentWeather(
+        latitude: Double,
+        longitude: Double,
+        saveToDatabase: Boolean = false
+    ): Result<Weather>
+
     fun getCachedWeather(): Flow<Weather?>
 
     suspend fun saveWeather(weather: Weather, locationName: String, lat: Double, lon: Double)

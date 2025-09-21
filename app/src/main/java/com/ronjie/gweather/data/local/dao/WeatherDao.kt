@@ -17,6 +17,6 @@ interface WeatherDao {
     @Query("SELECT * FROM weather_history WHERE id = :id")
     suspend fun getWeatherById(id: Long): WeatherEntity?
 
-    @Query("SELECT * FROM weather_history WHERE locationName LIKE '%' || :query || '%' ORDER BY timestamp DESC")
+    @Query("SELECT * FROM weather_history WHERE location LIKE '%' || :query || '%' ORDER BY timestamp DESC")
     fun searchWeatherHistory(query: String): Flow<List<WeatherEntity>>
 }

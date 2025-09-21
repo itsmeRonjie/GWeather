@@ -61,9 +61,11 @@ class WeatherViewModel @Inject constructor(
                     currentWeather = cachedWeather
                 }
                 loadWeather(
-                    lastLocation.latitude,
-                    lastLocation.longitude,
-                    false
+                    latitude = lastLocation.latitude,
+                    longitude = lastLocation.longitude,
+                    saveCoordinates = false,
+                    saveToDatabase = true
+
                 )
             } else {
                 _uiState.value =
@@ -77,7 +79,8 @@ class WeatherViewModel @Inject constructor(
         latitude: Double,
         longitude: Double,
         saveCoordinates: Boolean = true,
-        forceRefresh: Boolean = false
+        forceRefresh: Boolean = false,
+        saveToDatabase: Boolean = false
     ) {
         viewModelScope.launch {
             try {
@@ -89,15 +92,9 @@ class WeatherViewModel @Inject constructor(
                     _uiState.value = WeatherUiState.Loading
                 }
 
-                getCurrentWeather(latitude, longitude)
+                getCurrentWeather(latitude, longitude, saveToDatabase)
                     .onSuccess { weather ->
                         currentWeather = weather
-                        weatherRepository.saveWeather(
-                            weather = weather,
-                            locationName = weather.location,
-                            lat = latitude,
-                            lon = longitude
-                        )
                     }
                     .onFailure { exception ->
                         if (currentWeather == null) {
