@@ -34,57 +34,78 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    # Create mock google-services.json for CI
-    - name: Setup Firebase config
-      if: github.event_name != 'pull_request'
+    # Disable Firebase and Crashlytics for CI builds
+    - name: Configure build for CI
       run: |
-        mkdir -p app/src/debug
-        cat > app/src/debug/google-services.json << 'EOL'
+        # Create a dummy google-services.json for all build types
+        mkdir -p app/src/debug app/src/release
+        
+        # Create a minimal valid google-services.json
+        cat > app/google-services.json << 'EOL'
         {
           "project_info": {
             "project_number": "000000000000",
-            "project_id": "mock-project-id"
+            "project_id": "dummy-firebase-project",
+            "storage_bucket": "dummy-firebase-project.appspot.com"
           },
           "client": [
             {
               "client_info": {
                 "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
                 "android_client_info": {
-                  "package_name": "com.ronjie.gweather.debug"
+                  "package_name": "com.ronjie.gweather"
                 }
               },
               "api_key": [
                 {
-                  "current_key": "mock-api-key"
+                  "current_key": "dummy-api-key"
                 }
-              ]
+              ],
+              "services": {
+                "appinvite_service": {
+                  "status": 1,
+                  "other_platform_oauth_client": []
+                }
+              }
             }
-          ]
+          ],
+          "configuration_version": "1"
         }
         EOL
-
-    # For PRs, use a different approach to avoid Firebase initialization
-    - name: Disable Firebase for PRs
-      if: github.event_name == 'pull_request'
-      run: |
-        echo 'android.enableFirebase=false' > local.properties
-        echo 'firebaseCrashlytics.mappingFileUpdateEnabled=false' >> local.properties
+        
+        # Disable Firebase and Crashlytics
+        echo "android.defaults.buildfeatures.buildconfig=true" >> gradle.properties
+        echo "firebaseCrashlytics.mappingFileUpdateEnabled=false" >> gradle.properties
+        echo "org.gradle.parallel=true" >> gradle.properties
+        
+        # Create a local.properties with Firebase disabled
+        echo "android.enableFirebase=false" > local.properties
 
     - name: Build with Gradle
-      run: ./gradlew build -Pci --stacktrace --info
+      run: |
+        # Build without Firebase and Crashlytics
+        ./gradlew clean assembleDebug --stacktrace --info -Pci \
+          -Pandroid.enableFirebase=false \
+          -PfirebaseCrashlytics.mappingFileUpdateEnabled=false
 
     - name: Run tests
-      run: ./gradlew testDebugUnitTest
+      run: |
+        ./gradlew testDebugUnitTest --stacktrace --info -Pci \
+          -Pandroid.enableFirebase=false \
+          -PfirebaseCrashlytics.mappingFileUpdateEnabled=false
 
     - name: Lint check
-      run: ./gradlew lintDebug -Pci
+      run: |
+        ./gradlew lintDebug --stacktrace --info -Pci \
+          -Pandroid.enableFirebase=false \
+          -PfirebaseCrashlytics.mappingFileUpdateEnabled=false
 
     - name: Assemble debug APK
+      if: github.event_name != 'pull_request'
       run: |
-        # Only assemble debug APK if not in a PR
-        if [ "${{ github.event_name }}" != "pull_request" ]; then
-          ./gradlew assembleDebug
-        fi
+        ./gradlew assembleDebug --stacktrace --info -Pci \
+          -Pandroid.enableFirebase=false \
+          -PfirebaseCrashlytics.mappingFileUpdateEnabled=false
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
